@@ -13,7 +13,7 @@ import { PythonScriptModal } from './components/PythonScriptModal';
 import { AppMode, FormatMode, InboundProtocol, XrayOutbound, XrayInbound, XrayRoutingRule, ConversionStats } from './types';
 import { parseProxyKey, buildOutbound, buildInbound, getDefaultBaseOutbounds } from './utils/vlessParser';
 import { get100SampleKeys } from './data/sampleKeys';
-import { FileCode, ArrowRight, ShieldCheck, Sparkles, Terminal, Network } from 'lucide-react';
+import { FileCode, ArrowRight, ShieldCheck, Sparkles, Terminal, Network, Cpu } from 'lucide-react';
 
 export default function App() {
   const [appMode, setAppMode] = useState<AppMode>('outbounds');
@@ -126,17 +126,9 @@ export default function App() {
     return result;
   }, [baseOutbounds, includeBaseRules, parsedItems, formatMode, editedTags, removedIndices]);
 
-  // Full Xray Config Object (Inbounds + Outbounds + 1-to-1 Routing Rules)
-  const fullConfigObject = useMemo(() => {
+  // Generated Inbounds Array
+  const generatedInbounds = useMemo<XrayInbound[]>(() => {
     const inbounds: XrayInbound[] = [];
-    const routingRules: XrayRoutingRule[] = [
-      {
-        type: 'field',
-        ip: ['geoip:private'],
-        outboundTag: 'blocked'
-      }
-    ];
-
     let currentPort = startPort;
 
     parsedItems.validParams.forEach(({ param }, keyIdx) => {
@@ -146,28 +138,47 @@ export default function App() {
       const inboundTag = `inbound-${tag}`;
 
       inbounds.push(buildInbound(inboundTag, currentPort, inboundProtocol, '', param.uuid));
+      currentPort++;
+    });
+
+    return inbounds;
+  }, [parsedItems, removedIndices, editedTags, startPort, inboundProtocol]);
+
+  // Full Xray Config Object (Inbounds + Outbounds + 1-to-1 Routing Rules)
+  const fullConfigObject = useMemo(() => {
+    const routingRules: XrayRoutingRule[] = [
+      {
+        type: 'field',
+        ip: ['geoip:private'],
+        outboundTag: 'blocked'
+      }
+    ];
+
+    parsedItems.validParams.forEach(({ param }, keyIdx) => {
+      if (removedIndices.has(keyIdx)) return;
+
+      const tag = editedTags[keyIdx] || param.tag || 'vless-node';
+      const inboundTag = `inbound-${tag}`;
 
       routingRules.push({
         type: 'field',
         inboundTag: [inboundTag],
         outboundTag: tag
       });
-
-      currentPort++;
     });
 
     return {
       log: {
         loglevel: 'warning'
       },
-      inbounds,
+      inbounds: generatedInbounds,
       outbounds: finalOutbounds,
       routing: {
         domainStrategy: 'IPIfNonMatch',
         rules: routingRules
       }
     };
-  }, [parsedItems, removedIndices, editedTags, startPort, inboundProtocol, finalOutbounds]);
+  }, [parsedItems, removedIndices, editedTags, generatedInbounds, finalOutbounds]);
 
   const handleUpdateTag = (index: number, newTag: string) => {
     const baseCount = includeBaseRules ? baseOutbounds.length : 0;
@@ -219,13 +230,35 @@ export default function App() {
         {/* Quick Mode Indicator & Summary Bar */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
           <div className="flex items-center space-x-3">
-            <div className={`p-2.5 rounded-xl border ${appMode === 'full_config' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'}`}>
-              {appMode === 'full_config' ? <Network className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />}
+            <div className={`p-2.5 rounded-xl border ${
+              appMode === 'full_config'
+                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                : appMode === 'inbounds'
+                ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
+            }`}>
+              {appMode === 'full_config' ? (
+                <Network className="w-5 h-5" />
+              ) : appMode === 'inbounds' ? (
+                <Cpu className="w-5 h-5" />
+              ) : (
+                <Sparkles className="w-5 h-5" />
+              )}
             </div>
             <div>
               <span className="text-xs text-slate-400 block font-medium">Active Converter Mode</span>
-              <span className={`text-sm font-bold ${appMode === 'full_config' ? 'text-emerald-300' : 'text-indigo-300'}`}>
-                {appMode === 'full_config' ? 'Full Multi-Port Relay (Ports 50000+)' : 'Outbounds Array Only'}
+              <span className={`text-sm font-bold ${
+                appMode === 'full_config'
+                  ? 'text-emerald-300'
+                  : appMode === 'inbounds'
+                  ? 'text-blue-300'
+                  : 'text-indigo-300'
+              }`}>
+                {appMode === 'full_config'
+                  ? 'Full Multi-Port Relay (Ports 50000+)'
+                  : appMode === 'inbounds'
+                  ? 'Inbounds Array Only (Ports 50000+)'
+                  : 'Outbounds Array Only'}
               </span>
             </div>
           </div>
@@ -306,6 +339,7 @@ export default function App() {
           <JsonViewer
             appMode={appMode}
             outbounds={finalOutbounds}
+            inbounds={generatedInbounds}
             fullConfig={fullConfigObject}
           />
         )}

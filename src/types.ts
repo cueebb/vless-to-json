@@ -1,4 +1,4 @@
-export type AppMode = 'outbounds' | 'full_config';
+export type AppMode = 'outbounds' | 'full_config' | 'inbounds';
 export type FormatMode = 'flat' | 'vnext';
 export type InboundProtocol = 'vless' | 'socks' | 'http' | 'dokodemo-door' | 'mixed';
 

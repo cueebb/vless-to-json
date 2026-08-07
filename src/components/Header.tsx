@@ -56,6 +56,19 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
 
               <button
+                onClick={() => setAppMode('inbounds')}
+                className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                  appMode === 'inbounds'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+                title="Generate only Inbounds JSON array for Xray (Ports 50000+)"
+              >
+                <Cpu className="w-3.5 h-3.5" />
+                <span>Inbounds Only</span>
+              </button>
+
+              <button
                 onClick={() => setAppMode('full_config')}
                 className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
                   appMode === 'full_config'
@@ -65,7 +78,7 @@ export const Header: React.FC<HeaderProps> = ({
                 title="Multi-Port Inbound/Outbound Relay Mode with Full Xray JSON config (ports 50000+)"
               >
                 <Network className="w-3.5 h-3.5" />
-                <span>Full Relay Mode (Ports 50000+)</span>
+                <span>Full Relay Mode</span>
               </button>
             </div>
 

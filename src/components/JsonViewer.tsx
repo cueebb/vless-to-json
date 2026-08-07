@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
-import { Copy, Check, Download, FileCode, CheckCircle2, Network } from 'lucide-react';
-import { AppMode, XrayOutbound } from '../types';
+import { Copy, Check, Download, FileCode, CheckCircle2, Network, Cpu } from 'lucide-react';
+import { AppMode, XrayOutbound, XrayInbound } from '../types';
 
 interface JsonViewerProps {
   appMode: AppMode;
   outbounds: XrayOutbound[];
+  inbounds: XrayInbound[];
   fullConfig: any;
 }
 
-export const JsonViewer: React.FC<JsonViewerProps> = ({ appMode, outbounds, fullConfig }) => {
+export const JsonViewer: React.FC<JsonViewerProps> = ({ appMode, outbounds, inbounds, fullConfig }) => {
   const [copied, setCopied] = useState(false);
 
-  const displayData = appMode === 'full_config' ? fullConfig : outbounds;
+  const displayData =
+    appMode === 'full_config' ? fullConfig : appMode === 'inbounds' ? inbounds : outbounds;
   const jsonFormatted = JSON.stringify(displayData, null, 2);
 
   const handleCopy = () => {
@@ -21,7 +23,8 @@ export const JsonViewer: React.FC<JsonViewerProps> = ({ appMode, outbounds, full
   };
 
   const handleDownload = () => {
-    const fileName = appMode === 'full_config' ? 'config.json' : 'outbounds.json';
+    const fileName =
+      appMode === 'full_config' ? 'config.json' : appMode === 'inbounds' ? 'inbounds.json' : 'outbounds.json';
     const blob = new Blob([jsonFormatted], { type: 'application/json;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -42,12 +45,16 @@ export const JsonViewer: React.FC<JsonViewerProps> = ({ appMode, outbounds, full
           <h2 className="text-lg font-semibold text-slate-100 flex items-center space-x-2">
             {appMode === 'full_config' ? (
               <Network className="w-5 h-5 text-emerald-400" />
+            ) : appMode === 'inbounds' ? (
+              <Cpu className="w-5 h-5 text-blue-400" />
             ) : (
               <FileCode className="w-5 h-5 text-indigo-400" />
             )}
             <span>
               {appMode === 'full_config'
                 ? 'Full Multi-Port Relay Xray JSON Config'
+                : appMode === 'inbounds'
+                ? 'Generated Xray JSON Inbounds'
                 : 'Generated Xray JSON Outbounds'}
             </span>
           </h2>
@@ -56,6 +63,10 @@ export const JsonViewer: React.FC<JsonViewerProps> = ({ appMode, outbounds, full
               <>
                 Contains <span className="text-emerald-300 font-semibold">{fullConfig?.inbounds?.length || 0} Inbounds (Ports 50000+)</span>,{' '}
                 <span className="text-indigo-300 font-semibold">{outbounds.length} Outbounds</span> & 1-to-1 Routing Rules.
+              </>
+            ) : appMode === 'inbounds' ? (
+              <>
+                Total <span className="text-blue-300 font-semibold">{inbounds.length} inbounds</span> (Ports 50000+) formatted for Xray core config.
               </>
             ) : (
               <>
@@ -78,7 +89,14 @@ export const JsonViewer: React.FC<JsonViewerProps> = ({ appMode, outbounds, full
             ) : (
               <>
                 <Copy className="w-3.5 h-3.5 text-indigo-400" />
-                <span>Copy {appMode === 'full_config' ? 'Full Config JSON' : 'Outbounds JSON'}</span>
+                <span>
+                  Copy{' '}
+                  {appMode === 'full_config'
+                    ? 'Full Config JSON'
+                    : appMode === 'inbounds'
+                    ? 'Inbounds JSON'
+                    : 'Outbounds JSON'}
+                </span>
               </>
             )}
           </button>
@@ -86,11 +104,22 @@ export const JsonViewer: React.FC<JsonViewerProps> = ({ appMode, outbounds, full
           <button
             onClick={handleDownload}
             className={`px-3.5 py-2 text-white text-xs font-medium rounded-xl transition-colors shadow-sm flex items-center space-x-1.5 ${
-              appMode === 'full_config' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-indigo-600 hover:bg-indigo-500'
+              appMode === 'full_config'
+                ? 'bg-emerald-600 hover:bg-emerald-500'
+                : appMode === 'inbounds'
+                ? 'bg-blue-600 hover:bg-blue-500'
+                : 'bg-indigo-600 hover:bg-indigo-500'
             }`}
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Download {appMode === 'full_config' ? 'config.json' : 'outbounds.json'}</span>
+            <span>
+              Download{' '}
+              {appMode === 'full_config'
+                ? 'config.json'
+                : appMode === 'inbounds'
+                ? 'inbounds.json'
+                : 'outbounds.json'}
+            </span>
           </button>
         </div>
       </div>
@@ -110,6 +139,8 @@ export const JsonViewer: React.FC<JsonViewerProps> = ({ appMode, outbounds, full
         <span>
           {appMode === 'full_config'
             ? 'Full Xray server configuration ready. Run directly with `xray -config config.json`.'
+            : appMode === 'inbounds'
+            ? 'Inbounds array ready to be inserted into your Xray `inbounds` section.'
             : 'Ready to be loaded into Xray core, v2rayN, Nekoray, PassWall, Sing-Box, or custom proxy clients.'}
         </span>
       </div>

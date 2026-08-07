@@ -290,7 +290,7 @@ def DEFAULT_BASE_OUTBOUNDS():
     ]
 
 
-def convert_keys_file(input_path, format_mode="flat", full_mode=False, start_port=50000, inbound_protocol="vless", base_json=None):
+def convert_keys_file(input_path, format_mode="flat", full_mode=False, inbounds_only=False, start_port=50000, inbound_protocol="vless", base_json=None):
     with open(input_path, "r", encoding="utf-8") as f:
         lines = f.readlines()
 
@@ -339,23 +339,23 @@ def convert_keys_file(input_path, format_mode="flat", full_mode=False, start_por
             existing_tags.add(tag)
             outbounds.append(outbound)
 
-            if full_mode:
-                inbound_tag = f"inbound-{tag}"
-                inbound = build_inbound(inbound_tag, current_port, protocol=inbound_protocol, client_uuid=client_uuid)
-                inbounds.append(inbound)
+            inbound_tag = f"inbound-{tag}"
+            inbound = build_inbound(inbound_tag, current_port, protocol=inbound_protocol, client_uuid=client_uuid)
+            inbounds.append(inbound)
 
-                rules.append({
-                    "type": "field",
-                    "inboundTag": [inbound_tag],
-                    "outboundTag": tag
-                })
-                current_port += 1
-
+            rules.append({
+                "type": "field",
+                "inboundTag": [inbound_tag],
+                "outboundTag": tag
+            })
+            current_port += 1
             converted_count += 1
 
     print(f"Successfully converted {converted_count} keys from '{input_path}'!")
 
-    if full_mode:
+    if inbounds_only:
+        return inbounds
+    elif full_mode:
         return {
             "log": {
                 "loglevel": "warning"
@@ -372,12 +372,13 @@ def convert_keys_file(input_path, format_mode="flat", full_mode=False, start_por
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Convert VLESS keys file to Xray Outbounds or Full Relay Config JSON")
+    parser = argparse.ArgumentParser(description="Convert VLESS keys file to Xray Outbounds, Inbounds, or Full Relay Config JSON")
     parser.add_argument("input_file", help="Path to input .txt file containing VLESS keys (one per line)")
     parser.add_argument("-o", "--output", default="config.json", help="Path to output .json file")
     parser.add_argument("-m", "--merge", help="Optional path to existing JSON file to merge outbounds/inbounds into")
     parser.add_argument("--format", choices=["flat", "vnext"], default="flat", help="Settings format: 'flat' or 'vnext'")
     parser.add_argument("--full", action="store_true", help="Generate Full Xray Relay Config (Inbounds ports 50000+ & 1-to-1 Routing)")
+    parser.add_argument("--inbounds-only", action="store_true", help="Generate only Inbounds JSON array (ports 50000+)")
     parser.add_argument("--start-port", type=int, default=50000, help="Starting port for multi-port inbounds (default: 50000)")
     parser.add_argument("--inbound-protocol", choices=["vless", "socks", "http", "mixed", "dokodemo-door"], default="vless", help="Inbound protocol (default: vless)")
 
