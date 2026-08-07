@@ -1,22 +1,32 @@
 import React, { useRef } from 'react';
-import { Upload, FileText, CheckCircle2, AlertCircle, RefreshCw, Layers, Settings2 } from 'lucide-react';
-import { FormatMode, ConversionStats } from '../types';
+import { Upload, FileText, CheckCircle2, AlertCircle, RefreshCw, Layers, Settings2, Network } from 'lucide-react';
+import { AppMode, FormatMode, InboundProtocol, ConversionStats } from '../types';
 
 interface KeyInputSectionProps {
+  appMode: AppMode;
   rawKeysText: string;
   setRawKeysText: (text: string) => void;
   formatMode: FormatMode;
   setFormatMode: (mode: FormatMode) => void;
+  startPort: number;
+  setStartPort: (port: number) => void;
+  inboundProtocol: InboundProtocol;
+  setInboundProtocol: (proto: InboundProtocol) => void;
   stats: ConversionStats;
   onLoadSampleKeys: () => void;
   onClear: () => void;
 }
 
 export const KeyInputSection: React.FC<KeyInputSectionProps> = ({
+  appMode,
   rawKeysText,
   setRawKeysText,
   formatMode,
   setFormatMode,
+  startPort,
+  setStartPort,
+  inboundProtocol,
+  setInboundProtocol,
   stats,
   onLoadSampleKeys,
   onClear
@@ -89,46 +99,101 @@ export const KeyInputSection: React.FC<KeyInputSectionProps> = ({
           </div>
         </div>
 
-        {/* Format Selector Toggle */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-slate-900/60 p-3 rounded-xl border border-slate-700/50 gap-3 text-xs">
-          <div className="flex items-center space-x-2 text-slate-300 font-medium">
-            <Settings2 className="w-4 h-4 text-indigo-400" />
-            <span>Output Outbounds Format:</span>
-          </div>
+        {/* Mode Specific Settings Row */}
+        {appMode === 'full_config' ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-slate-900/80 p-3.5 rounded-xl border border-emerald-500/30 text-xs">
+            
+            {/* Start Port Input */}
+            <div className="flex items-center space-x-2">
+              <span className="text-slate-300 font-medium shrink-0">Inbound Start Port:</span>
+              <input
+                type="number"
+                value={startPort}
+                onChange={(e) => setStartPort(parseInt(e.target.value, 10) || 50000)}
+                min={1024}
+                max={65000}
+                className="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-emerald-300 font-mono font-bold w-24 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              />
+              <span className="text-[10px] text-slate-400">Range: {startPort} - {startPort + Math.max(0, stats.parsedKeys - 1)}</span>
+            </div>
 
-          <div className="flex items-center bg-slate-800 p-1 rounded-lg border border-slate-700">
-            <button
-              onClick={() => setFormatMode('flat')}
-              className={`px-3 py-1 rounded-md font-medium transition-all ${
-                formatMode === 'flat'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-              title="User Prompt Example style: settings has address, port, id, encryption, flow"
-            >
-              Flat Settings (Prompt Example)
-            </button>
+            {/* Inbound Protocol Selector */}
+            <div className="flex items-center space-x-2">
+              <span className="text-slate-300 font-medium shrink-0">Inbound Protocol:</span>
+              <select
+                value={inboundProtocol}
+                onChange={(e) => setInboundProtocol(e.target.value as InboundProtocol)}
+                className="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-slate-200 font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              >
+                <option value="vless">VLESS (Reference Config)</option>
+                <option value="socks">SOCKS5</option>
+                <option value="http">HTTP</option>
+                <option value="mixed">Mixed (SOCKS/HTTP)</option>
+                <option value="dokodemo-door">dokodemo-door</option>
+              </select>
+            </div>
 
-            <button
-              onClick={() => setFormatMode('vnext')}
-              className={`px-3 py-1 rounded-md font-medium transition-all ${
-                formatMode === 'vnext'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-              title="Standard Xray core format: settings.vnext array"
-            >
-              Standard Xray (vnext)
-            </button>
+            {/* Format Mode */}
+            <div className="flex items-center space-x-2 justify-end">
+              <span className="text-slate-300 font-medium shrink-0">Outbound Format:</span>
+              <div className="flex items-center bg-slate-950 p-0.5 rounded-lg border border-slate-700">
+                <button
+                  onClick={() => setFormatMode('flat')}
+                  className={`px-2 py-0.5 rounded font-medium text-[11px] ${formatMode === 'flat' ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}
+                >
+                  Flat
+                </button>
+                <button
+                  onClick={() => setFormatMode('vnext')}
+                  className={`px-2 py-0.5 rounded font-medium text-[11px] ${formatMode === 'vnext' ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}
+                >
+                  vnext
+                </button>
+              </div>
+            </div>
+
           </div>
-        </div>
+        ) : (
+          /* Format Selector Toggle */
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-slate-900/60 p-3 rounded-xl border border-slate-700/50 gap-3 text-xs">
+            <div className="flex items-center space-x-2 text-slate-300 font-medium">
+              <Settings2 className="w-4 h-4 text-indigo-400" />
+              <span>Output Outbounds Format:</span>
+            </div>
+
+            <div className="flex items-center bg-slate-800 p-1 rounded-lg border border-slate-700">
+              <button
+                onClick={() => setFormatMode('flat')}
+                className={`px-3 py-1 rounded-md font-medium transition-all ${
+                  formatMode === 'flat'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+                title="User Prompt Example style: settings has address, port, id, encryption, flow"
+              >
+                Flat Settings (Prompt Example)
+              </button>
+
+              <button
+                onClick={() => setFormatMode('vnext')}
+                className={`px-3 py-1 rounded-md font-medium transition-all ${
+                  formatMode === 'vnext'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+                title="Standard Xray core format: settings.vnext array"
+              >
+                Standard Xray (vnext)
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Text Area for Input Keys */}
         <div className="relative">
           <textarea
             value={rawKeysText}
             onChange={(e) => setRawKeysText(e.target.value)}
-            placeholder={`Paste your vless:// keys here, one per line. For example:\n\nvless://b6735d94-f3ce-4c85-b86d-0478fac74454@larkix.pulsio.cfd:443?encryption=none&flow=xtls-rprx-vision&fp=firefox&pbk=OTuJX9K_E2nHhg0mXT2uFMNIO7746G6c5rlT6OscQGk&security=reality&sid=9698d67e63bc8ee0&sni=larkix.pulsio.cfd&type=tcp#🇳🇱 Soda VPN | Нидерланды\n...`}
             rows={10}
             className="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl p-4 text-slate-200 font-mono text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-indigo-500/50 resize-y"
           />
@@ -146,7 +211,9 @@ export const KeyInputSection: React.FC<KeyInputSectionProps> = ({
 
           <div className="bg-emerald-950/30 p-3 rounded-xl border border-emerald-500/20 flex items-center justify-between">
             <div>
-              <span className="text-[11px] text-emerald-400 uppercase tracking-wider block font-medium">Parsed Keys</span>
+              <span className="text-[11px] text-emerald-400 uppercase tracking-wider block font-medium">
+                {appMode === 'full_config' ? 'Inbounds + Outbounds' : 'Parsed Keys'}
+              </span>
               <span className="text-lg font-bold text-emerald-300">{stats.parsedKeys}</span>
             </div>
             <CheckCircle2 className="w-5 h-5 text-emerald-400" />

@@ -1,4 +1,4 @@
-import { FormatMode, VlessParsedParams, XrayOutbound } from '../types';
+import { FormatMode, InboundProtocol, VlessParsedParams, XrayInbound, XrayOutbound, XrayRoutingRule, FullXrayConfig } from '../types';
 
 /**
  * Safely decodes URI components handling UTF-8 special characters (emojis, Cyrillic, etc.)
@@ -35,7 +35,6 @@ export function parseProxyKey(rawLine: string): VlessParsedParams | null {
   }
 
   try {
-    // Standard URL parser needs a scheme
     const url = new URL(urlPart);
     const scheme = url.protocol.replace(':', '').toLowerCase();
 
@@ -159,7 +158,6 @@ export function buildOutbound(params: VlessParsedParams, mode: FormatMode = 'fla
     tag
   } = params;
 
-  // Stream settings building
   const streamSettings: Record<string, any> = {
     network,
     security
@@ -183,7 +181,6 @@ export function buildOutbound(params: VlessParsedParams, mode: FormatMode = 'fla
     };
   }
 
-  // Network specific settings
   if (network === 'ws') {
     streamSettings.wsSettings = {
       path,
@@ -205,7 +202,6 @@ export function buildOutbound(params: VlessParsedParams, mode: FormatMode = 'fla
   }
 
   if (mode === 'flat') {
-    // Matching exact user requested flat settings structure
     return {
       tag,
       protocol: scheme,
@@ -219,7 +215,6 @@ export function buildOutbound(params: VlessParsedParams, mode: FormatMode = 'fla
       streamSettings
     };
   } else {
-    // Standard Xray vnext format
     return {
       tag,
       protocol: scheme,
@@ -241,6 +236,151 @@ export function buildOutbound(params: VlessParsedParams, mode: FormatMode = 'fla
       streamSettings
     };
   }
+}
+
+/**
+ * Builds an Inbound object for multi-port routing
+ */
+export function buildInbound(
+  inboundTag: string,
+  port: number,
+  protocol: InboundProtocol = 'vless',
+  listen: string = '',
+  clientUuid?: string
+): XrayInbound {
+  if (protocol === 'vless') {
+    return {
+      listen: listen,
+      port,
+      protocol: 'vless',
+      tag: inboundTag,
+      settings: {
+        clients: [
+          {
+            id: clientUuid || '52bbd434-80d3-452c-b196-2bfe98287983',
+            email: 'admin',
+            flow: '',
+            limitIp: 0,
+            totalGB: 0,
+            expiryTime: 0,
+            enable: true,
+            tgId: 0,
+            subId: 'b9l20tr0l5l4aeqr',
+            comment: '',
+            reset: 0,
+            created_at: 1783065559862,
+            updated_at: 1786103025000
+          }
+        ],
+        decryption: 'mlkem768x25519plus.native.600s.MODElkUYolaYC7Ih-EvWvvwjMfwnenX5lVp5B0EdjnM',
+        encryption: 'mlkem768x25519plus.native.0rtt.5vG41xsznSSjzFJtg-9ZiIWHamMof6XLQVyA8L6lNVI'
+      },
+      sniffing: {
+        enabled: false
+      },
+      streamSettings: {
+        network: 'xhttp',
+        xhttpSettings: {
+          path: '/',
+          host: '',
+          mode: 'auto',
+          xPaddingBytes: '100-1000',
+          xPaddingObfsMode: false,
+          xPaddingKey: '',
+          xPaddingHeader: '',
+          xPaddingPlacement: '',
+          xPaddingMethod: '',
+          sessionIDPlacement: '',
+          sessionIDKey: '',
+          sessionIDTable: '',
+          sessionIDLength: '',
+          seqPlacement: '',
+          seqKey: '',
+          uplinkDataPlacement: '',
+          uplinkDataKey: '',
+          scMaxEachPostBytes: '',
+          noSSEHeader: false,
+          scMaxBufferedPosts: 30,
+          scStreamUpServerSecs: '20-80',
+          serverMaxHeaderBytes: 0,
+          uplinkHTTPMethod: '',
+          headers: {},
+          scMinPostsIntervalMs: '',
+          uplinkChunkSize: 0,
+          noGRPCHeader: false,
+          enableXmux: false
+        },
+        security: 'reality',
+        realitySettings: {
+          show: false,
+          xver: 0,
+          target: 'www.cloudflare.com:443',
+          serverNames: ['www.cloudflare.com'],
+          privateKey: 'UNs8Q3C-NnyoPm3M1s9wldrrZJGdIPSNvCNQsC7meHw',
+          minClientVer: '',
+          maxClientVer: '',
+          maxTimediff: 0,
+          shortIds: [
+            'fc87761b',
+            'e7142a',
+            '65ea',
+            'f1',
+            '0b88cc4138',
+            '79d9442ee7c61f8f',
+            'bae4052430fe',
+            'b4f946b3c2eeaa'
+          ],
+          mldsa65Seed: '',
+          settings: {
+            publicKey: 'ieBYMMzviSfDvqoZOe2L4eiew4xTUHyFu42wIDfPhC0',
+            fingerprint: 'firefox',
+            serverName: '',
+            spiderX: '/',
+            mldsa65Verify: ''
+          }
+        }
+      }
+    };
+  }
+
+  let settings: Record<string, any> = {};
+
+  if (protocol === 'socks') {
+    settings = {
+      auth: 'noauth',
+      udp: true,
+      ip: '127.0.0.1'
+    };
+  } else if (protocol === 'http') {
+    settings = {
+      allowTransparent: false,
+      userLevel: 0
+    };
+  } else if (protocol === 'mixed') {
+    settings = {
+      auth: 'noauth',
+      udp: true
+    };
+  } else if (protocol === 'dokodemo-door') {
+    settings = {
+      address: '1.1.1.1',
+      port: 53,
+      network: 'tcp,udp'
+    };
+  }
+
+  return {
+    tag: inboundTag,
+    port,
+    listen: listen || '0.0.0.0',
+    protocol,
+    settings,
+    sniffing: {
+      enabled: true,
+      destOverride: ['http', 'tls', 'quic'],
+      routeOnly: false
+    }
+  };
 }
 
 /**

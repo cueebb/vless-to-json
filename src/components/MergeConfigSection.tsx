@@ -106,7 +106,6 @@ export const MergeConfigSection: React.FC<MergeConfigSectionProps> = ({
             className={`w-full bg-slate-950/90 border rounded-xl p-4 text-slate-200 font-mono text-xs leading-relaxed focus:outline-none focus:ring-2 ${
               errorMsg ? 'border-rose-500/80 focus:ring-rose-500/50' : 'border-slate-700/80 focus:ring-indigo-500/50'
             }`}
-            placeholder='[\n  {\n    "tag": "direct",\n    "protocol": "freedom"\n  }\n]'
           />
 
           {errorMsg ? (

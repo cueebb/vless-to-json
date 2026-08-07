@@ -1,4 +1,6 @@
+export type AppMode = 'outbounds' | 'full_config';
 export type FormatMode = 'flat' | 'vnext';
+export type InboundProtocol = 'vless' | 'socks' | 'http' | 'dokodemo-door' | 'mixed';
 
 export interface VlessParsedParams {
   scheme: string;
@@ -29,6 +31,37 @@ export interface XrayOutbound {
   settings: Record<string, any>;
   streamSettings?: Record<string, any>;
   [key: string]: any;
+}
+
+export interface XrayInbound {
+  tag: string;
+  port: number;
+  listen: string;
+  protocol: string;
+  settings: Record<string, any>;
+  sniffing?: Record<string, any>;
+  [key: string]: any;
+}
+
+export interface XrayRoutingRule {
+  type: string;
+  inboundTag?: string[];
+  outboundTag?: string;
+  ip?: string[];
+  domain?: string[];
+  [key: string]: any;
+}
+
+export interface FullXrayConfig {
+  log?: {
+    loglevel: string;
+  };
+  inbounds: XrayInbound[];
+  outbounds: XrayOutbound[];
+  routing: {
+    domainStrategy: string;
+    rules: XrayRoutingRule[];
+  };
 }
 
 export interface ConversionStats {
