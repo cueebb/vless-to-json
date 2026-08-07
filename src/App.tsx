@@ -17,15 +17,10 @@ import { FileCode, ArrowRight, ShieldCheck, Sparkles, Terminal } from 'lucide-re
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'convert' | 'merge' | 'json' | 'python'>('convert');
-  const [rawKeysText, setRawKeysText] = useState<string>(() => {
-    // Preload sample keys so the user can see instant results!
-    return get100SampleKeys().join('\n');
-  });
+  const [rawKeysText, setRawKeysText] = useState<string>('');
   const [formatMode, setFormatMode] = useState<FormatMode>('flat');
   const [includeBaseRules, setIncludeBaseRules] = useState<boolean>(true);
-  const [baseJsonText, setBaseJsonText] = useState<string>(() => {
-    return JSON.stringify(getDefaultBaseOutbounds(), null, 2);
-  });
+  const [baseJsonText, setBaseJsonText] = useState<string>('');
   const [editedTags, setEditedTags] = useState<Record<number, string>>({});
   const [removedIndices, setRemovedIndices] = useState<Set<number>>(new Set());
 
@@ -83,7 +78,7 @@ export default function App() {
       if (typeof parsed === 'object' && Array.isArray(parsed.outbounds)) return parsed.outbounds;
       return [];
     } catch {
-      return getDefaultBaseOutbounds();
+      return [];
     }
   }, [includeBaseRules, baseJsonText]);
 
