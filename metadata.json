@@ -1,0 +1,6 @@
+{
+  "name": "VLESS to Xray Outbounds Converter",
+  "description": "Convert VLESS and proxy keys to Xray JSON outbounds, merge with existing configurations, and export Python converter scripts.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
